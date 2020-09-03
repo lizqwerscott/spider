@@ -2,21 +2,19 @@
   :version "0.0.0"
   :author "lizqwer scott"
   :license "GPL"
+  :description "a spider"
   :depends-on ("uiop"
+               ;;threads
+               bordeaux-threads
                ;; json
                "cl-json"
                ;; web
                "dexador"
                ;; time
                "local-time"
-               "chronicity")
+               ;;chronicity
+               )
   :components ((:file "package")
-               (:module "tree"
-                :depends-on ("package")
-                :serial t
-                :components ((:file "node") 
-                             (:file "tree" :depends-on ("node"))))
-               (:file "main" :depends-on ("package" "tree")))
-  :description "a spider")
-
-
+               (:file "head" :depends-on ("package"))
+               (:file "task" :depends-on ("package" "head"))
+               (:file "main" :depends-on ("package" "head" "task"))))
