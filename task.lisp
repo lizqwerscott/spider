@@ -9,8 +9,8 @@
 (defgeneric start-task (task-one)
   (:documentation "start-task thread"))
 
-(defgeneric handle (task-one) 
-  (:documentation "handle the page"))
+(defgeneric stop-task (task-one)
+  (:documentation "stop the task"))
 
 (defgeneric show-task (task-one)
   (:documentation "show task base info"))
@@ -21,15 +21,22 @@
 (defgeneric save-task (task-one save-path)
   (:documentation "save the task"))
 
-(defun load-task (load-path)
-  (let ((plist-t (load-file (merge-pathnames :name "task" :type "txt") load-path)))
-    (make-instance 'task :id (getf plist-t :id) :base-host (getf plist-t :base-host)
+(defun load-task (path)
+  (let* ((plist-t (load-file path))
+        (task-one (make-instance 'task :id (getf plist-t :id) :base-host (getf plist-t :base-host)
                    :proxyp (getf plist-t :proxyp) :resources (getf plist-t :resources)
-                   :handle-fun (getf plist-t :handle-fun) :last-date (getf plist-t :last-date)
-                   :runp (getf plist-t :runp) :nowrunp (getf plist-t :nowrunp))))
+                   :handle-fun (getf plist-t :handle-fun))))
+    (setf (last-date task-one) (unix-to-timestamp (getf plist-t :last-date)))
+    (setf (get-run task-one) (getf plist-t :runp))
+    task-one))
 
 (defun get-thread-name ()
   (thread-name (current-thread)))
+
+(defparameter *handle-functions* (make-hash-table :test #'equal))
+
+(defun get-handle-fun ()
+  *handle-functions*)
 
 ;download-url (:baiduyun-share (url ma) :baiduyun-ma url :mega url :bt-url url :bt-file path :common-url url)
 ;((:id id :download-url download-url :zip-code "nil" :web-url web-url :info info) () ())
@@ -72,7 +79,7 @@
   (do () ((not (get-run task-one)) 'done) 
       (setf (get-now-run task-one) t) 
       (format t "RUn:thread name:~A~%" (get-thread-name))
-      (apply (get-handle task-one) (list task-one))
+      (apply (gethash (get-handle task-one) *handle-functions*) (list task-one))
       (setf (get-now-run task-one) nil) 
       (do ((i 1 (+ i 1))) 
           ((and (not (get-now-run task-one)) (< i 1800)) 'done) 
@@ -80,6 +87,9 @@
 
 (defmethod start-task ((task-one task))
   (make-thread (lambda () (run-task task-one)) :name (task-id task-one)))
+
+(defmethod stop-task ((task-one task))
+  (setf (get-run task-one) nil))
 
 (defmethod show-task ((task-one task))
   (format t "id:~A~%url:~A~%"
@@ -89,11 +99,11 @@
 (defmethod become-plist ((task-one task))
   (list :id (task-id task-one) :base-host (get-base-host task-one) :proxyp (isproxyp task-one) 
         :resources (task-resources task-one) :handle-fun (get-handle task-one) 
-        :last-date (last-date task-one) :runp (get-run task-one) :nowrunp (get-now-run task-one)))
+        :last-date (timestamp-to-unix (last-date task-one)) :runp (get-run task-one)))
 
 (defmethod save-task ((task-one task) save-path) 
   (save-file (become-plist task-one)
-             (merge-pathnames (make-pathname :name "task" :type "txt") save-path)))
+             (merge-pathnames (make-pathname :name (task-id task-one) :type "txt") save-path)))
 
 
 (in-package :cl-user)

@@ -17,4 +17,5 @@
   :components ((:file "package")
                (:file "head" :depends-on ("package"))
                (:file "task" :depends-on ("package" "head"))
-               (:file "main" :depends-on ("package" "head" "task"))))
+               (:file "handles" :depends-on ("package" "head" "task"))
+               (:file "main" :depends-on ("package" "head" "task" "handles"))))

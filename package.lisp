@@ -9,8 +9,10 @@
 (defpackage :spider 
   (:use :common-lisp :spider.head :bordeaux-threads :local-time :cl-json) 
   (:export 
+    :get-handle-fun
     :get-resources
     :start-task
+    :stop-task
     :show-task
     :save-task
     :load-task
