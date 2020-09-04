@@ -26,6 +26,7 @@
              nil)))
 
 (defun remove-task (id)
+  (stop-task (find-task id))
   (setf *run-task-list* (remove id *run-task-list* :key #'task-id :test #'string=)))
 
 (defun save-list (path)
