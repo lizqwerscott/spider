@@ -1,10 +1,13 @@
 (in-package :cl-user)
 
 (defpackage :spider.head
-  (:use :common-lisp)
+  (:use :common-lisp :uiop)
   (:export 
     :save-file
-    :load-file))
+    :load-file
+    :run-shell
+    :get-save-path
+    :set-save-path))
 
 (defpackage :spider 
   (:use :common-lisp :spider.head :bordeaux-threads :local-time :cl-json) 
