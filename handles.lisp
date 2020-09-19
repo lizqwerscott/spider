@@ -48,12 +48,12 @@
 
 (defun get-postid (i)
   (mapcar #'(lambda (str)
-             (cl-ppcre:scan-to-strings "[0-9]+" str))
+             (parse-integer (cl-ppcre:scan-to-strings "[0-9]+" str)))
           (scan-file-line "<article id=\"post-[0-9]*\"" (merge-pathnames (make-name "page" i) (append-dir (get-save-path) "pages")))))
 
 (defun get-date (i)
   (mapcar #'(lambda (str)
-              (cl-ppcre:scan-to-strings "[0-9]{4}-[0-9]{2}-[0-9]{2}" str))
+              (parse-integer (run-shell (format nil "date -d ~A +\"%s\"" (cl-ppcre:scan-to-strings "[0-9]{4}-[0-9]{2}-[0-9]{2}" str)) t)))
           (scan-file-line "published.*[0-9]{4}-[0-9]{2}-[0-9]{2}<\/time><time class=\"updated\"" (merge-pathnames (make-name "page" i) (append-dir (get-save-path) "pages")))))
 
 (defun save-archives (archives)
@@ -74,6 +74,8 @@
   ;TODO
   )
 
+(defparameter *run-n* 1)
+
 (defmethod lingmeng-handle ((task-one task))
   (format t "~A~%" (task-id task-one))
   (download-page 1 (get-base-host task-one))
@@ -81,7 +83,7 @@
       (progn (format t "Finish~%")
              (do* ((i 1 (+ 1 i)))
                ;TODO need hava last date ;then can don't download the last archive
-               ((> i (last-index (merge-pathnames (make-name "page" 1) (append-dir (get-save-path) "pages")))) 'done)
+               ((> i (if t 10 (last-index (merge-pathnames (make-name "page" 1) (append-dir (get-save-path) "pages"))))) 'done)
                (when (not (= i 1))
                  (download-page i (get-base-host task-one))
                  (format t "download page:~A~%" i))
@@ -89,7 +91,18 @@
                                            (list id date))
                                        (get-postid i)
                                        (get-date i))))
-                 (save-archives (append-rs (load-archives) archives :key #'car :test #'string=)))))
-      (format t "ERROR")))
+                 (if (= i 1)
+                     (setf archives (remove 10309 archives :key #'car)))
+                 (format t "finish remove 10309~%")
+                 (save-archives (append-rs (load-archives) archives :key #'car))
+                 (format t "finish save~%")
+                 (if (not (= *run-n* 1)) 
+                     (let ((na (car (cdr (car (last archives)))))
+                       (la (car (cdr (car (load-archives))))))
+                       (format t "t:~A;t2:~A~%" na la)
+                       (if (<= na la)
+                           (return)))))))
+      (format t "ERROR"))
+  (setf *run-n* (+ *run-n* 1)))
 
 (in-package :cl-user)
