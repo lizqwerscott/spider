@@ -50,4 +50,7 @@
                (vector-push task-one *run-task-list*)
                (start-task task-one)))))
 
+(defun test-task ()
+  (add-task "lingmeng" "https://blog.reimu.net" "lingmeng"))
+
 (in-package :cl-user)

@@ -24,4 +24,5 @@
     :find-task
     :show-list
     :save-list
-    :load-list))
+    :load-list
+    :test-task))

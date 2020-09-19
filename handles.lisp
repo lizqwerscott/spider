@@ -65,9 +65,10 @@
     (if (probe-file path)
         (load-file (namestring path)))))
 
-;TODO need let it dont have same archive
-(defun add-archives (archives)
-  (save-archives (append (load-archives) archives)))
+(defun append-rs (f-lst lst &key (key #'(lambda (x) x)) (test #'eql))
+  (dolist (i lst)
+    (setf lst (remove (funcall key (find (funcall key i) f-lst :key key :test test)) lst :key key :test test)))
+  (append f-lst lst))
 
 (defun make-source (postid)
   ;TODO
@@ -75,18 +76,20 @@
 
 (defmethod lingmeng-handle ((task-one task))
   (format t "~A~%" (task-id task-one))
-  (download-page ((make-name "page" 1) (get-base-host task-one)))
-  (if (probe-file (make-name "page" 1))
-      (format t "Finish"))
-  (do* ((i 1 (+ 1 i)))
-    ;TODO need hava last date ;then can don't download the last archive
-    ((> i (last-index page)) 'done)
-    (when (not (= i 1))
-      (download-page i (get-base-host task-one)))
-    (let ((archives (mapcar #'(lambda (id date)
-                                (list id date))
-                            (get-postid)
-                            (get-date))))
-      (add-archives archives))))
+  (download-page 1 (get-base-host task-one))
+  (if (probe-file (namestring (merge-pathnames (make-name "page" 1) (append-dir (get-save-path) "pages"))))
+      (progn (format t "Finish~%")
+             (do* ((i 1 (+ 1 i)))
+               ;TODO need hava last date ;then can don't download the last archive
+               ((> i (last-index (merge-pathnames (make-name "page" 1) (append-dir (get-save-path) "pages")))) 'done)
+               (when (not (= i 1))
+                 (download-page i (get-base-host task-one))
+                 (format t "download page:~A~%" i))
+               (let ((archives (mapcar #'(lambda (id date)
+                                           (list id date))
+                                       (get-postid i)
+                                       (get-date i))))
+                 (save-archives (append-rs (load-archives) archives :key #'car :test #'string=)))))
+      (format t "ERROR")))
 
 (in-package :cl-user)
